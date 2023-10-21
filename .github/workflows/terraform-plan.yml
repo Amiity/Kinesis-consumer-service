@@ -7,28 +7,20 @@ on:
   workflow_dispatch:
 
 jobs:
-  qa3:
+  test:
     uses: ./.github/workflows/terraform-template.yml
     with:
-      backendAWSBucketName: 'terraform-state-consumer-qa3'
-      backendAWSKey: 'qa3.terraform.tfstate'
-      environment: qa3
+      backendAWSBucketName: 'terraform-state-consumer-test'
+      backendAWSKey: 'test.terraform.tfstate'
+      environment: test
     secrets: inherit
 
-  qa2:
+  stage:
     uses: ./.github/workflows/terraform-template.yml
     with:
-      backendAWSBucketName: 'terraform-state-consumer-qa2'
-      backendAWSKey: 'qa2.terraform.tfstate'
-      environment: qa2
-    secrets: inherit
-
-  uat:
-    uses: ./.github/workflows/terraform-template.yml
-    with:
-      backendAWSBucketName: 'terraform-state-consumer-uat'
-      backendAWSKey: 'uat.terraform.tfstate'
-      environment: uat
+      backendAWSBucketName: 'terraform-state-consumer-stage'
+      backendAWSKey: 'stage.terraform.tfstate'
+      environment: stage
     secrets: inherit
 
   prod:

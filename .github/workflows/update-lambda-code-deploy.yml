@@ -9,32 +9,24 @@ on:
   workflow_dispatch:
 
 jobs:
-  qa3:
+  test:
     uses: ./.github/workflows/update-lambda-template.yml
     with:
-      environment: qa3
-      functionName: cdc-consumer-qa3
+      environment: test
+      functionName: cdc-consumer-test
     secrets: inherit
 
-  qa2:
+  stage:
     uses: ./.github/workflows/update-lambda-template.yml
-    needs: qa3
+    needs: test
     with:
-      environment: qa2
-      functionName: cdc-consumer-qa2
-    secrets: inherit
-
-  uat:
-    uses: ./.github/workflows/update-lambda-template.yml
-    needs: qa2
-    with:
-      environment: uat
-      functionName: cdc-consumer-uat
+      environment: stage
+      functionName: cdc-consumer-stage
     secrets: inherit
 
   prod:
     uses: ./.github/workflows/update-lambda-template.yml
-    needs: uat
+    needs: stage
     with:
       environment: prod
       functionName: cdc-consumer-prod
