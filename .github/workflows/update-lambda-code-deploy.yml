@@ -1,0 +1,41 @@
+name: 'Deploy Lambda Function Code'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lambda-code/**'
+  workflow_dispatch:
+
+jobs:
+  qa3:
+    uses: ./.github/workflows/update-lambda-template.yml
+    with:
+      environment: qa3
+      functionName: cdc-consumer-qa3
+    secrets: inherit
+
+  qa2:
+    uses: ./.github/workflows/update-lambda-template.yml
+    needs: qa3
+    with:
+      environment: qa2
+      functionName: cdc-consumer-qa2
+    secrets: inherit
+
+  uat:
+    uses: ./.github/workflows/update-lambda-template.yml
+    needs: qa2
+    with:
+      environment: uat
+      functionName: cdc-consumer-uat
+    secrets: inherit
+
+  prod:
+    uses: ./.github/workflows/update-lambda-template.yml
+    needs: uat
+    with:
+      environment: prod
+      functionName: cdc-consumer-prod
+    secrets: inherit
