@@ -1,0 +1,45 @@
+name: 'Update Lambda functionCode Template'
+
+on:
+  workflow_call:
+    inputs:
+      workingDirectory:
+        required: false
+        type: string
+        default: lambda-code
+      environment:
+        required: true
+        type: string
+      awsRegion:
+        required: false
+        type: string
+        default: "us-east-1"
+      functionName:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: deploy ${{ inputs.environment }}
+    runs-on: [ "self-hosted", "amit-runner" ]
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: ${{ vars.demo_AWS_PROD_ROLE }}
+          role-session-name: cdc-consumer-lambda-code
+          aws-region: us-east-1
+      - name: Zip Lambda Code
+        run: |
+          cd lambda-code
+          zip -r lambda-code.zip consumer-lambda-function.py
+        working-directory: ${{ github.workspace }}
+      - name: Update Lambda Code
+        run: |
+          aws lambda update-function-code --function-name cdc-consumer-qa3 --zip-file fileb://lambda-code/lambda-code.zip --region us-east-1

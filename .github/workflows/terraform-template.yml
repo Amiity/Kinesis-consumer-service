@@ -1,0 +1,104 @@
+name: 'Infrastructure Template'
+
+on:
+  workflow_call:
+    inputs:
+      workingDirectory:
+        required: false
+        type: string
+        default: terraform
+      backendAWSBucketName:
+        required: true
+        type: string
+      backendAWSKey:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      terraformVersion:
+        required: false
+        type: string
+        default: "1.5.4"
+      awsRegion:
+        required: false
+        type: string
+        default: "us-east-1"
+      runApply:
+        required: false
+        type: boolean
+        default: false
+
+
+jobs:
+  plan:
+    name: Plan ${{ inputs.environment }}
+    runs-on: [ "self-hosted", "ubuntu-latest" ]
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: configureawscredentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ vars.demo_AWS_PROD_ROLE }}
+          role-session-name: cdc-consumer-plan
+          aws-region: us-east-1
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ inputs.terraformVersion }}
+      - name: Terraform Init
+        run: |
+          terraform init -backend-config="bucket=${{inputs.backendAWSBucketName}}" -backend-config="key=${{inputs.backendAWSKey}}"
+        working-directory: ${{inputs.workingDirectory}}
+      - name: Terraform Plan
+        id: plan
+        run: |
+          env=$(echo "${{ inputs.environment }}" | tr '[:upper:]' '[:lower:]')
+          terraform plan -var-file="./environments/$env.tfvars" -out=now.tfplan
+        working-directory: ${{inputs.workingDirectory}}
+
+  apply:
+    name: Apply ${{ inputs.environment }}
+    needs: plan
+    runs-on: [ "self-hosted", "ubuntu-latest" ]
+    environment: "${{ inputs.environment }}"
+    if: ${{ inputs.runApply }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: configureawscredentials
+        uses: aws-actions/configure-aws-credentials@v3
+        with:
+          role-to-assume: ${{ vars.demo_AWS_PROD_ROLE }}
+          role-session-name: cdc-consumer-apply
+          aws-region: us-east-1
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ inputs.terraformVersion }}
+      - name: Terraform Init
+        run: |
+          terraform init -backend-config="bucket=${{inputs.backendAWSBucketName}}" -backend-config="key=${{inputs.backendAWSKey}}"
+        working-directory: ${{inputs.workingDirectory}}
+      - name: Terraform Plan
+        id: plan
+        run: |
+          env=$(echo "${{ inputs.environment }}" | tr '[:upper:]' '[:lower:]')
+          terraform plan -var-file="./environments/$env.tfvars" -out=now.tfplan
+        working-directory: ${{inputs.workingDirectory}}
+      - name: Terraform Apply
+        if: ${{ inputs.runApply }}
+        run: |
+          terraform apply now.tfplan
+        working-directory: ${{inputs.workingDirectory}}
+      - name: List files in Working Directory
+        run: ls
+        working-directory: ${{inputs.workingDirectory}}
+
+

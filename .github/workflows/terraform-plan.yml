@@ -1,0 +1,33 @@
+name: 'Plan Infrastructure'
+
+on:
+  push:
+    paths:
+      - 'terraform/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/terraform-template.yml
+    with:
+      backendAWSBucketName: 'terraform-state-consumer-test'
+      backendAWSKey: 'test.terraform.tfstate'
+      environment: test
+    secrets: inherit
+
+  stage:
+    uses: ./.github/workflows/terraform-template.yml
+    with:
+      backendAWSBucketName: 'terraform-state-consumer-stage'
+      backendAWSKey: 'stage.terraform.tfstate'
+      environment: stage
+    secrets: inherit
+
+  prod:
+    uses: ./.github/workflows/terraform-template.yml
+    with:
+      backendAWSBucketName: 'terraform-state-consumer-prod'
+      backendAWSKey: 'prod.terraform.tfstate'
+      environment: prod
+    secrets: inherit
+

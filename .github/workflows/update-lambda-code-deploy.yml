@@ -1,0 +1,33 @@
+name: 'Deploy Lambda Function Code'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'lambda-code/**'
+  workflow_dispatch:
+
+jobs:
+  test:
+    uses: ./.github/workflows/update-lambda-template.yml
+    with:
+      environment: test
+      functionName: cdc-consumer-test
+    secrets: inherit
+
+  stage:
+    uses: ./.github/workflows/update-lambda-template.yml
+    needs: test
+    with:
+      environment: stage
+      functionName: cdc-consumer-stage
+    secrets: inherit
+
+  prod:
+    uses: ./.github/workflows/update-lambda-template.yml
+    needs: stage
+    with:
+      environment: prod
+      functionName: cdc-consumer-prod
+    secrets: inherit
